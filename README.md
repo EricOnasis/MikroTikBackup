@@ -28,7 +28,7 @@ After installing Python, you need to install the required Python packages using 
 
 # Overview
 
-The MikroTikBackupAsService script is designed to run as a Windows service, performing daily backups of MikroTik routers and storing them locally.
+The MikroTikBackupAsService script is designed to run as a Windows service, performing daily backups of MikroTik routers, deleting them from the router and storing them locally.
 
 # Installing the Service
 
