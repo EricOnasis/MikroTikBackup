@@ -15,6 +15,9 @@
     "retry_delay": 5,
     "backup_ready_timeout": 60,
     "retention_days": 30,
-    "backup_password": null
+    "backup_password": null,
+    "max_parallel": 1,
+    "export_config": false,
+    "notify": null
   }
 }

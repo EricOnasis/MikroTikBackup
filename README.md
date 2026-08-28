@@ -1,30 +1,19 @@
 # MikroTikBackup
 
-This repository contains two Python scripts for automating the backup process of MikroTik routers:
-
-    MikroTikBackupAsService: A Windows service that automates daily backups.
-    MikroTikBackupAsScript: A standalone script that can be executed manually to back up multiple MikroTik routers.
-
-Both share the same backup logic in `mikrotik_backup_lib.py` and read router details/settings
-from a `config.json` file (never committed — see Configuration below).
+A single Python tool for automating backups of MikroTik routers over SSH/SFTP: connects to each
+router, saves a config backup, downloads it locally, and removes it from the router. Run it once
+manually, on a daily cron job (Linux/macOS), or as a Windows service — all from one script.
 
 ### Prerequisites
 
-Before using these scripts, ensure the following software is installed on your system:
-
     Python 3.x: Download Python
     Paramiko: For SSH connections.
-    PyWin32: Required for creating and managing the Windows service.
+    PyWin32: Only required if you want to run this as a Windows service.
 
-### Installing Python
+### Installing
 
-    Download and install Python 3.x from the official Python website.
-    Ensure that Python is added to your system's PATH during the installation process.
-
-### Installing Required Python Packages
-
-After installing Python, you need to install the required Python packages using pip:
-
+    git clone https://github.com/ericonasis/MikroTikBackup.git
+    cd MikroTikBackup
     pip install -r requirements.txt
 
 ### Configuration
@@ -46,7 +35,10 @@ Copy `config.example.json` to `config.json` and fill in your router details:
         "retry_delay": 5,
         "backup_ready_timeout": 60,
         "retention_days": 30,
-        "backup_password": null
+        "backup_password": null,
+        "max_parallel": 1,
+        "export_config": false,
+        "notify": null
       }
     }
 
@@ -57,58 +49,59 @@ Settings:
         (replaces a fixed blind wait).
     retention_days: local backups older than this are deleted automatically. Set to 0 to keep forever.
     backup_password: if set, backups are saved password-protected (`/system backup save password=...`).
+    max_parallel: how many routers to back up concurrently. 1 = sequential (default). Raise this if you
+        have many routers and want faster runs.
+    export_config: if true, also saves a human-readable `.rsc` config export (via `/export`) alongside
+        the binary `.backup` file. Unlike the binary backup, `.rsc` files are diffable/versionable — put
+        `local_backup_path` under git if you want a history of config changes. Export failures don't
+        affect the backup result.
+    notify: optional failure notifications. Example:
 
-# MikroTikBackupAsService
+        "notify": {
+          "on_failure_only": true,
+          "webhook_url": "https://hooks.slack.com/services/...",
+          "webhook_type": "slack",
+          "email": {
+            "smtp_host": "smtp.example.com",
+            "smtp_port": 587,
+            "username": "alerts@example.com",
+            "password": "...",
+            "from": "alerts@example.com",
+            "to": ["you@example.com"]
+          }
+        }
 
-## Overview
+        webhook_type: "slack", "discord", "ntfy", or "generic" (posts `{"text": message}` as JSON).
+        Set webhook_url and/or email — both fire if both are set. on_failure_only (default true) skips
+        notifying on fully-successful runs.
 
-The MikroTikBackupAsService script is designed to run as a Windows service, performing daily backups of MikroTik routers, deleting them from the router and storing them locally.
+### Running once
 
-### Installing the Service
+    python mikrotik_backup.py run
 
-Clone this repository to your local machine:
+Connects to each router, creates a backup, transfers it locally, and deletes it from the router.
 
+### Running on a schedule (Linux/macOS)
 
-    git clone https://github.com/ericonasis/MikroTikBackup.git
-    cd MikroTikBackup
+    python mikrotik_backup.py install-cron              # daily at 02:00
+    python mikrotik_backup.py install-cron --time 03:30  # or pick a time
+    python mikrotik_backup.py uninstall-cron             # remove it
 
-Set up `config.json` as described above (place it next to the scripts).
+This adds a line to your user crontab that runs `mikrotik_backup.py run` daily, logging to
+`logs/cron.log`.
 
-Install the service by running the following command in the terminal:
+### Running as a Windows service
 
+    python mikrotik_backup.py service install
+    python mikrotik_backup.py service start
 
-    python MikroTikBackupAsService.py install
+Runs `run` once per day in the background. Logs go to a daily file in the `logs` directory next to
+the script.
 
-### Start the service:
+Manage it with:
 
-    python MikroTikBackupAsService.py start
-
-### Managing the Service
-
-You can manually stop, start, or uninstall the service using these commands:
-
-    Stop the service: python MikroTikBackupAsService.py stop
-    Uninstall the service: python MikroTikBackupAsService.py remove
-
-### Log Files
-
-The service creates daily log files in a `logs` directory next to the script. The logs provide detailed information about the backup process.
-
-
-# MikroTikBackupAsScript
-
-## Overview
-The MikroTikBackupAsScript script is a standalone Python script that you can run manually to back up multiple MikroTik routers.
-
-### Running the Script
-
-Set up `config.json` as described above (place it next to the script).
-
-Run the script using Python:
-
-    python MikroTikBackupAsScript.py
-
-The script will connect to each router, create a backup, transfer it to the local machine, and delete the backup from the router.
+    python mikrotik_backup.py service stop
+    python mikrotik_backup.py service remove
 
 ### Contributing
 

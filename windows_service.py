@@ -1,9 +1,12 @@
-"""Windows service: back up every router listed in config.json, once per day."""
+"""Windows service wrapper around mikrotik_backup_lib. Windows-only (needs pywin32).
+
+Normally driven via `python mikrotik_backup.py service install|start|stop|remove`,
+but can also be run directly (`python windows_service.py install`) if needed.
+"""
 import logging
 import os
 import time
 
-import servicemanager
 import win32event
 import win32service
 import win32serviceutil
