@@ -1,0 +1,2 @@
+paramiko>=3.4
+pywin32>=306; sys_platform == "win32"

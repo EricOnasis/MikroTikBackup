@@ -1,0 +1,20 @@
+{
+  "routers": [
+    {
+      "name": "example-router",
+      "host": "192.168.88.1",
+      "port": 22,
+      "username": "admin",
+      "password": "changeme"
+    }
+  ],
+  "settings": {
+    "local_backup_path": "C:\\MikroTikBackups",
+    "connection_timeout": 10,
+    "connect_retries": 3,
+    "retry_delay": 5,
+    "backup_ready_timeout": 60,
+    "retention_days": 30,
+    "backup_password": null
+  }
+}
